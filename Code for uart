@@ -1,0 +1,49 @@
+#include <WiFi.h>
+#include <WebServer.h>
+
+const char* ssid = "Joseph";         
+const char* password = "mamamopassword"; 
+
+WebServer server(80); // Web server on port 80
+
+void setup() {
+  Serial.begin(115200);  // Debugging
+  Serial2.begin(9600, SERIAL_8N1, 16, 17);  // UART2 on GPIO16(RX), GPIO17(TX) to Arduino UNO
+
+  WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+
+  Serial.println("\nWiFi Connected!");
+  Serial.print("ESP32 IP Address: ");
+  Serial.println(WiFi.localIP());
+
+  // Root page
+  server.on("/", HTTP_GET, []() {
+    server.send(200, "text/html", 
+      "<h1>LED Control</h1>"
+      "<a href='/on'><button style='font-size:30px'>ON</button></a>"
+      "<a href='/off'><button style='font-size:30px'>OFF</button></a>");
+  });
+
+  // ON button
+  server.on("/on", HTTP_GET, []() {
+    Serial2.println("ON"); // Send to Arduino via UART
+    server.send(200, "text/plain", "LED ON");
+  });
+
+  // OFF button
+  server.on("/off", HTTP_GET, []() {
+    Serial2.println("OFF"); // Send to Arduino via UART
+    server.send(200, "text/plain", "LED OFF");
+  });
+
+  server.begin();
+}
+
+void loop() {
+  server.handleClient();  // Handle web requests
+}
